@@ -1091,6 +1091,18 @@
       }
     });
 
+    // 點擊編輯區內的超連結時，在新視窗開啟以供測試
+    editor.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (link && link.getAttribute('href')) {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && !href.startsWith('javascript:')) {
+          window.open(link.href, '_blank', 'noopener,noreferrer');
+          showToast(`已在新視窗開啟測試：${link.innerText || href}`, 'info');
+        }
+      }
+    });
+
     // 資料庫存取
     function getAllStoredRecords() {
       try {
@@ -1720,16 +1732,26 @@
       restoreSelection();
 
       if (linkText) {
-        const linkHtml = `<a href="${linkUrl}" target="_blank" style="${FORCED_INLINE_STYLE} color: #1d4ed8; text-decoration: underline;">${escapeHtml(linkText)}</a>`;
+        const linkHtml = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="${FORCED_INLINE_STYLE} color: #1d4ed8; text-decoration: underline;">${escapeHtml(linkText)}</a>`;
         document.execCommand('insertHTML', false, linkHtml);
       } else {
         document.execCommand('createLink', false, linkUrl);
+        const sel = window.getSelection();
+        if (sel && sel.anchorNode) {
+          let node = sel.anchorNode;
+          if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+          const a = node ? node.closest('a') : null;
+          if (a) {
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+          }
+        }
       }
 
       editor.focus();
       pushHistoryState(true);
       triggerAutoSave();
-      showToast('超連結已建立', 'success');
+      showToast('超連結已建立（點擊即可在新視窗開啟測試）', 'success');
     }
 
     // 清空操作
